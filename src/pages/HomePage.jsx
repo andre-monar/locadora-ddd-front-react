@@ -31,6 +31,14 @@ const HomePage = () => {
       accent: "var(--accent3)",
       glow: "rgba(255,107,107,.25)",
     },
+    {
+      id: "categorias-carro",
+      icon: <Icon.Category />,  
+      label: "Categorias de Carro",
+      desc: "Organize a frota: valor da diária, nome e status.",
+      accent: "var(--accent4)",
+      glow: "rgba(255,193,7,.25)",
+    },
   ];
  
   return (

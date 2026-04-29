@@ -21,35 +21,99 @@ const CarrosPage = () => {
   const [toast, setToast]     = useState(null);
  
   useEffect(() => {
+    // simulação de dados
     setTimeout(() => {
       setRows([
-        { id: 1, modelo: "Onix",    marca: "Chevrolet", placa: "ABC-1234", grupo: "0" },
-        { id: 2, modelo: "Corolla", marca: "Toyota",    placa: "XYZ-5678", grupo: "2" },
+        {
+          id: 1,
+          modelo: "Onix",
+          marca: "Chevrolet",
+          placa: "ABC1D23",
+          ano: 2022,
+          cor: "Prata",
+          imagemUrl: "",
+          idCategoria: 1,
+          ativo: true,
+          disponivel: true,
+          dataAlteracao: "2025-04-20T10:30:00"
+        },
+        {
+          id: 2,
+          modelo: "Corolla",
+          marca: "Toyota",
+          placa: "XYZ9A87",
+          ano: 2023,
+          cor: "Preto",
+          imagemUrl: "https://exemplo.com/corolla.jpg",
+          idCategoria: 2,
+          ativo: true,
+          disponivel: false,
+          dataAlteracao: "2025-04-18T14:15:00"
+        },
       ]);
       setLoading(false);
     }, 900);
   }, []);
  
   const fields = [
-    { key: "modelo", label: "Modelo", required: true },
-    { key: "marca",  label: "Marca",  required: true },
-    { key: "placa",  label: "Placa",  required: true, placeholder: "ABC-0000" },
-    { key: "grupo",  label: "Grupo",  type: "select", options: grupoOpts },
+    { key: "modelo",      label: "Modelo",        required: true, type: "text" },
+    { key: "marca",       label: "Marca",         required: true, type: "text" },
+    { key: "placa",       label: "Placa",         required: true, type: "text", placeholder: "ABC1D23" },
+    { key: "ano",         label: "Ano",           required: true, type: "number" },
+    { key: "cor",         label: "Cor",           required: true, type: "text" },
+    { key: "imagemUrl",   label: "URL da Imagem", type: "url" },
+    { key: "idCategoria", label: "ID da Categoria", required: true, type: "number" },
+    { 
+      key: "ativo", 
+      label: "Ativo", 
+      type: "select", 
+      options: [{ value: true, label: "Sim" }, { value: false, label: "Não" }] 
+    },
   ];
- 
+
   const columns = [
-    { key: "modelo", label: "Modelo", primary: true },
-    { key: "marca",  label: "Marca" },
-    { key: "placa",  label: "Placa" },
-    { key: "grupo",  label: "Grupo", render: v => grupoOpts.find(o => o.value === String(v))?.label ?? v },
+    { key: "id",           label: "ID" },
+    { key: "modelo",       label: "Modelo",       primary: true },
+    { key: "marca",        label: "Marca" },
+    { key: "placa",        label: "Placa" },
+    { key: "ano",          label: "Ano" },
+    { key: "cor",          label: "Cor" },
+    { key: "idCategoria",  label: "Categoria" },
+    { 
+  key: "ativo", 
+  label: "Ativo", 
+    render: v => v 
+      ? <span style={{ color: 'var(--accent2)' }}><Icon.Check /></span> 
+      : <span style={{ color: 'var(--muted)' }}><Icon.Close /></span>
+  },
+  { 
+    key: "disponivel", 
+    label: "Disponível",
+    render: v => v 
+      ? <span style={{ color: 'var(--accent2)' }}><Icon.Check /></span> 
+      : <span style={{ color: 'var(--muted)' }}><Icon.Close /></span>
+  },
+    { 
+      key: "dataAlteracao", 
+      label: "Alterado em", 
+      render: v => v ? new Date(v).toLocaleString() : "-" 
+    },
   ];
- 
+
   const handleSave = data => {
+    const newData = {
+      ...data,
+      // Garante que campos não editáveis mantenham valores padrão
+      disponivel: data.disponivel ?? false,
+      dataAlteracao: new Date().toISOString(),
+      ativo: data.ativo !== undefined ? data.ativo : true,
+    };
+
     if (data.id) {
-      setRows(r => r.map(x => x.id === data.id ? { ...x, ...data } : x));
+      setRows(r => r.map(x => x.id === data.id ? { ...x, ...newData } : x));
       setToast({ msg: "Carro atualizado!", type: "success" });
     } else {
-      setRows(r => [...r, { ...data, id: Date.now() }]);
+      setRows(r => [...r, { ...newData, id: Date.now() }]);
       setToast({ msg: "Carro criado!", type: "success" });
     }
     setModal({ open: false, data: null });

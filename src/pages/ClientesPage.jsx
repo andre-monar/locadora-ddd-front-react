@@ -16,45 +16,95 @@ const ClientesPage = () => {
   useEffect(() => {
     setTimeout(() => {
       setRows([
-        { id: 1, nome: "Ana Paula Souza", cpf: "123.456.789-00", cnh: "98765", celular: "(11) 91234-5678", estado: true },
-        { id: 2, nome: "Carlos Lima",     cpf: "987.654.321-00", cnh: "12345", celular: "(21) 99876-5432", estado: true },
+        {
+          id: 1,
+          nome: "Ana Paula Souza",
+          cpf: "12345678901",
+          dataNascimento: "1990-05-15",
+          celular: "11987654321",
+          email: "ana@exemplo.com",
+          cep: "01001000",
+          endereco: "Rua Exemplo, 123",
+          complementoEndereco: "Apto 45",
+          ativo: true,
+          dataCriacao: "2025-03-10T08:00:00",
+          dataAlteracao: null,
+        },
+        {
+          id: 2,
+          nome: "Carlos Lima",
+          cpf: "98765432100",
+          dataNascimento: "1985-07-20",
+          celular: "11912345678",
+          email: "carlos@exemplo.com",
+          cep: "02002000",
+          endereco: "Av. Paulista, 1000",
+          complementoEndereco: "",
+          ativo: false,
+          dataCriacao: "2025-04-01T12:30:00",
+          dataAlteracao: "2025-04-15T09:45:00",
+        },
       ]);
       setLoading(false);
     }, 900);
   }, []);
  
   const fields = [
-    { key: "nome",                label: "Nome completo",       required: true,  full: true },
-    { key: "cpf",                 label: "CPF",                 required: true,  placeholder: "000.000.000-00" },
-    { key: "cnh",                 label: "CNH",                 required: true },
-    { key: "celular",             label: "Celular",             placeholder: "(11) 9..." },
-    { key: "cep",                 label: "CEP",                 placeholder: "00000-000" },
-    { key: "endereco",            label: "Endereço",            full: true },
-    { key: "complementoEndereco", label: "Complemento",         full: true },
-    { key: "estado", label: "Ativo", type: "select",
-      options: [{ value: "true", label: "Sim" }, { value: "false", label: "Não" }] },
+    { key: "nome",                label: "Nome",            required: true, type: "text" },
+    { key: "cpf",                 label: "CPF",             required: true, type: "text", placeholder: "00000000000" },
+    { key: "dataNascimento",      label: "Data de Nascimento", required: true, type: "date" },
+    { key: "celular",             label: "Celular",         required: true, type: "text", placeholder: "54999999999" },
+    { key: "email",               label: "E-mail",          required: true, type: "email" },
+    { key: "cep",                 label: "CEP",             type: "text", placeholder: "00000000" },
+    { key: "endereco",            label: "Endereço",        type: "text" },
+    { key: "complementoEndereco", label: "Complemento",     type: "text" },
+    {
+      key: "ativo",
+      label: "Ativo",
+      type: "select",
+      options: [
+        { value: true, label: "Sim" },
+        { value: false, label: "Não" }
+      ]
+    },
   ];
  
   const columns = [
-    { key: "nome",    label: "Nome",    primary: true },
-    { key: "cpf",     label: "CPF" },
-    { key: "cnh",     label: "CNH" },
-    { key: "celular", label: "Celular" },
-    { key: "estado",  label: "Status", render: v => (
-      <span style={{ color: v ? "var(--accent2)" : "var(--accent3)", fontSize: 12, fontWeight: 600 }}>
-        {v ? "● Ativo" : "○ Inativo"}
-      </span>
-    )},
+    { key: "id",                 label: "ID" },
+    { key: "nome",               label: "Nome",             primary: true },
+    { key: "cpf",                label: "CPF" },
+    { key: "dataNascimento",     label: "Nascimento",       render: v => v ? new Date(v).toLocaleDateString() : "-" },
+    { key: "celular",            label: "Celular" },
+    { key: "email",              label: "E-mail" },
+    { key: "cep",                label: "CEP" },
+    { key: "endereco",           label: "Endereço" },
+    { 
+      key: "ativo", 
+      label: "Ativo",            
+      render: v => v 
+        ? <span style={{ color: 'var(--accent2)' }}><Icon.Check /></span> 
+        : <span style={{ color: 'var(--muted)' }}><Icon.Close /></span>
+    },
+    { key: "dataCriacao",        label: "Criado em",        render: v => v ? new Date(v).toLocaleString() : "-" },
+    { key: "dataAlteracao",      label: "Alterado em",      render: v => v ? new Date(v).toLocaleString() : "-" },
   ];
  
   const handleSave = data => {
-    // TODO: POST /api/Cliente  ou  PUT /api/Cliente/{id}
+    // Prepara dados – campos automáticos são definidos no ato da criação/edição
+    const now = new Date().toISOString();
+    const newData = {
+      ...data,
+      ativo: data.ativo !== undefined ? data.ativo : true, // default true
+      dataAlteracao: now,
+    };
+
     if (data.id) {
-      setRows(r => r.map(x => x.id === data.id ? { ...x, ...data } : x));
+      // Atualização: mantém dataCriacao original
+      setRows(r => r.map(x => x.id === data.id ? { ...x, ...newData } : x));
       setToast({ msg: "Cliente atualizado!", type: "success" });
     } else {
-      const newRow = { ...data, id: Date.now() };
-      setRows(r => [...r, newRow]);
+      // Criação: gera id e dataCriacao
+      setRows(r => [...r, { ...newData, id: Date.now(), dataCriacao: now }]);
       setToast({ msg: "Cliente criado!", type: "success" });
     }
     setModal({ open: false, data: null });

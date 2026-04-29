@@ -3,6 +3,7 @@ import HomePage from './pages/HomePage'
 import ClientesPage from './pages/ClientesPage.jsx'
 import CarrosPage from './pages/CarrosPage.jsx'
 import AlocacoesPage from './pages/AlocacoesPage'
+import CategoriaCarroPage from './pages/CategoriaCarroPage'
 
 function App() {
   return (
@@ -12,6 +13,7 @@ function App() {
         <Route path="/clientes" element={<ClientesPage />} />
         <Route path="/carros" element={<CarrosPage/>} />
         <Route path="/alocacoes" element={<AlocacoesPage />} />
+        <Route path="/categorias-carro" element={<CategoriaCarroPage />} />
       </Routes>
     </BrowserRouter>
   )
