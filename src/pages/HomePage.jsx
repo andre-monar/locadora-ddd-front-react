@@ -16,7 +16,7 @@ const HomePage = () => {
       glow: "rgba(108,99,255,.25)",
     },
     {
-      id: "veiculos",
+      id: "carros",
       icon: <Icon.Car />,
       label: "Carros",
       desc: "Frota disponível: modelo, marca, placa e grupo.",

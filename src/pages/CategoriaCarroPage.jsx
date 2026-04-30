@@ -4,15 +4,13 @@ import FormModal from '../components/FormModal'
 import Toast from '../components/Toast'
 import Icon from '../components/Icon'
 import { api } from '../services/api'
-// ════════════════════════════════════════════════════════════════
-//  CATEGORIAS DE CARRO PAGE 
-// ════════════════════════════════════════════════════════════════
 
 const CategoriaCarroPage = () => {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState({ open: false, data: null });
   const [toast, setToast] = useState(null);
+  const [fieldErrors, setFieldErrors] = useState({});
 
   useEffect(() => {
     api.get('/CategoriaCarro')
@@ -21,36 +19,21 @@ const CategoriaCarroPage = () => {
       .finally(() => setLoading(false));
   }, []);
 
-  const fields = [
-    { key: "nome",        label: "Nome",          required: true },
-    { key: "descricao",   label: "Descrição",     type: "textarea" },
-    { key: "valorDiaria", label: "Valor da Diária", required: true, type: "number", step: "0.01" },
-    { key: "ativo",       label: "Ativo",         type: "select", options: [
-        { value: true, label: "Sim" },
-        { value: false, label: "Não" }
-      ]
-    },
-  ];
+  const buildFieldErrors = (erros) =>
+    erros.reduce((acc, { campo, mensagem }) => ({ ...acc, [campo.toLowerCase()]: mensagem }), {});
 
-  const columns = [
-    { key: "id",          label: "ID" },
-    { key: "nome",        label: "Nome",          primary: true },
-    { key: "descricao",   label: "Descrição" },
-    { key: "valorDiaria", label: "Valor Diária",  render: v => `R$ ${Number(v).toFixed(2)}` },
-    { 
-        key: "ativo", 
-        label: "Ativo",         
-        render: v => v 
-        ? <span style={{ color: 'var(--accent2)' }}><Icon.Check /></span> 
-        : <span style={{ color: 'var(--muted)' }}><Icon.Close /></span>
-    },
-  ];
+  const closeModal = () => {
+    setModal({ open: false, data: null });
+    setFieldErrors({});
+  };
 
   const handleSave = async data => {
+    setFieldErrors({});
     try {
       const payload = {
         ...data,
         valorDiaria: parseFloat(data.valorDiaria) || 0,
+        ativo: data.ativo === true || data.ativo === "true"
       };
       if (data.id) {
         await api.put(`/CategoriaCarro/${data.id}`, payload);
@@ -61,9 +44,13 @@ const CategoriaCarroPage = () => {
       }
       const lista = await api.get('/CategoriaCarro');
       setRows(lista);
-      setModal({ open: false, data: null });
+      closeModal();
     } catch (e) {
-      setToast({ msg: e.message, type: "error" });
+      if (e.erros) {
+        setFieldErrors(buildFieldErrors(e.erros));
+      } else {
+        setToast({ msg: e.message, type: "error" });
+      }
     }
   };
 
@@ -77,12 +64,35 @@ const CategoriaCarroPage = () => {
     }
   };
 
+  const fields = [
+    { key: "nome", label: "Nome", required: true },
+    { key: "descricao", label: "Descrição", type: "textarea" },
+    { key: "valorDiaria", label: "Valor da Diária", required: true, type: "number", step: "0.01" },
+    {
+      key: "ativo", label: "Ativo", type: "select", boolean: true,
+      options: [{ value: true, label: "Sim" }, { value: false, label: "Não" }]
+    },
+  ];
+
+  const columns = [
+    { key: "id", label: "ID" },
+    { key: "nome", label: "Nome", primary: true },
+    { key: "descricao", label: "Descrição" },
+    { key: "valorDiaria", label: "Valor Diária", render: v => `R$ ${Number(v).toFixed(2)}` },
+    {
+      key: "ativo", label: "Ativo",
+      render: v => v
+        ? <span style={{ color: 'var(--accent2)' }}><Icon.Check /></span>
+        : <span style={{ color: 'var(--muted)' }}><Icon.Close /></span>
+    },
+  ];
+
   return (
     <>
       <CrudTable
         title="Categorias de Carro" icon={<Icon.Category />} accent="var(--accent4)"
         columns={columns} rows={rows} loading={loading}
-        onAdd={() => setModal({ open: true, data: null })}
+        onAdd={() => setModal({ open: true, data: { ativo: true } })}   // abre com ativo true
         onEdit={row => setModal({ open: true, data: row })}
         onDelete={handleDelete}
       />
@@ -91,8 +101,9 @@ const CategoriaCarroPage = () => {
         title={modal.data?.id ? "Editar Categoria" : "Nova Categoria"}
         fields={fields}
         initialData={modal.data}
+        fieldErrors={fieldErrors}
         onSave={handleSave}
-        onClose={() => setModal({ open: false, data: null })}
+        onClose={closeModal}
       />
       {toast && <Toast msg={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
     </>

@@ -1,4 +1,6 @@
 import { useEffect } from 'react'
+import Icon from './Icon'
+
 // ─── Toast de feedback ───────────────────────────────────────────
 const Toast = ({ msg, type, onClose }) => {
   useEffect(() => { const t = setTimeout(onClose, 3200); return () => clearTimeout(t); }, []);

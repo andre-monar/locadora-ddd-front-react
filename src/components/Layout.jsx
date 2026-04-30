@@ -19,7 +19,7 @@ const Layout = ({ children, page, onNav }) => (
       <nav style={{ display: "flex", gap: 4 }}>
         {[
           { id: "clientes",  label: "Clientes" },
-          { id: "veiculos",  label: "Carros" },
+          { id: "carros",  label: "Carros" },
           { id: "alocacoes", label: "Alocações" },
         ].map(item => (
           <button key={item.id} onClick={() => onNav(item.id)}
