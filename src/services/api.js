@@ -1,4 +1,4 @@
-const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:5000/api";
+const BASE_URL = import.meta.env.VITE_API_URL;
 
 async function request(path, options = {}) {
   const res = await fetch(`${BASE_URL}${path}`, {
@@ -6,14 +6,12 @@ async function request(path, options = {}) {
     ...options,
   });
 
-  const data = await res.json();
-
   if (!res.ok) {
-    throw new Error(data?.erro ?? data?.message ?? "Erro na requisição");
+    const error = await res.json().catch(() => ({}));
+    throw new Error(error?.mensagem || error?.title || "Erro na requisição");
   }
 
-  // A API retorna { sucesso: true, dados: [...] }
-  return data.dados ?? data;
+  return res.json();
 }
 
 export const api = {

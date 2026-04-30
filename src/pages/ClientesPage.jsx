@@ -3,6 +3,8 @@ import CrudTable from '../components/CrudTable'
 import FormModal from '../components/FormModal'
 import Toast from '../components/Toast'
 import Icon from '../components/Icon'
+import { api } from '../services/api';
+
 // ════════════════════════════════════════════════════════════════
 //  CLIENTES PAGE
 // ════════════════════════════════════════════════════════════════
@@ -12,41 +14,16 @@ const ClientesPage = () => {
   const [modal, setModal]     = useState({ open: false, data: null });
   const [toast, setToast]     = useState(null);
  
-  // ── Simulação de chamada à API (substituir por fetch real) ──
+  // ── Chamada à API ──
   useEffect(() => {
-    setTimeout(() => {
-      setRows([
-        {
-          id: 1,
-          nome: "Ana Paula Souza",
-          cpf: "12345678901",
-          dataNascimento: "1990-05-15",
-          celular: "11987654321",
-          email: "ana@exemplo.com",
-          cep: "01001000",
-          endereco: "Rua Exemplo, 123",
-          complementoEndereco: "Apto 45",
-          ativo: true,
-          dataCriacao: "2025-03-10T08:00:00",
-          dataAlteracao: null,
-        },
-        {
-          id: 2,
-          nome: "Carlos Lima",
-          cpf: "98765432100",
-          dataNascimento: "1985-07-20",
-          celular: "11912345678",
-          email: "carlos@exemplo.com",
-          cep: "02002000",
-          endereco: "Av. Paulista, 1000",
-          complementoEndereco: "",
-          ativo: false,
-          dataCriacao: "2025-04-01T12:30:00",
-          dataAlteracao: "2025-04-15T09:45:00",
-        },
-      ]);
-      setLoading(false);
-    }, 900);
+    api.get('/Cliente')
+      .then(data => {
+        console.log("Dados recebidos:", data);
+        setRows(data);
+        setLoading(false);
+      })
+      .catch(err => console.error("Erro:", err))
+      .finally(() => setLoading(false));
   }, []);
  
   const fields = [
@@ -89,31 +66,32 @@ const ClientesPage = () => {
     { key: "dataAlteracao",      label: "Alterado em",      render: v => v ? new Date(v).toLocaleString() : "-" },
   ];
  
-  const handleSave = data => {
-    // Prepara dados – campos automáticos são definidos no ato da criação/edição
-    const now = new Date().toISOString();
-    const newData = {
-      ...data,
-      ativo: data.ativo !== undefined ? data.ativo : true, // default true
-      dataAlteracao: now,
-    };
-
-    if (data.id) {
-      // Atualização: mantém dataCriacao original
-      setRows(r => r.map(x => x.id === data.id ? { ...x, ...newData } : x));
-      setToast({ msg: "Cliente atualizado!", type: "success" });
-    } else {
-      // Criação: gera id e dataCriacao
-      setRows(r => [...r, { ...newData, id: Date.now(), dataCriacao: now }]);
-      setToast({ msg: "Cliente criado!", type: "success" });
+  const handleSave = async data => {
+    try {
+      if (data.id) {
+        await api.put(`/Cliente/${data.id}`, data);
+        setToast({ msg: "Cliente atualizado!", type: "success" });
+      } else {
+        await api.post('/Cliente', data);
+        setToast({ msg: "Cliente criado!", type: "success" });
+      }
+      // Recarrega lista atualizada
+      const lista = await api.get('/Cliente');
+      setRows(lista);
+      setModal({ open: false, data: null });
+    } catch (e) {
+      setToast({ msg: e.message, type: "error" });
     }
-    setModal({ open: false, data: null });
   };
  
-  const handleDelete = row => {
-    // TODO: DELETE /api/Cliente/{row.id}
-    setRows(r => r.filter(x => x.id !== row.id));
-    setToast({ msg: "Cliente excluído.", type: "success" });
+  const handleDelete = async row => {
+    try {
+      await api.delete(`/Cliente/${row.id}`);
+      setRows(r => r.filter(x => x.id !== row.id));
+      setToast({ msg: "Cliente excluído.", type: "success" });
+    } catch (e) {
+      setToast({ msg: e.message, type: "error" });
+    }
   };
  
   return (

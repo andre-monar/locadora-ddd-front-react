@@ -3,6 +3,10 @@ import CrudTable from '../components/CrudTable'
 import FormModal from '../components/FormModal'
 import Toast from '../components/Toast'
 import Icon from '../components/Icon'
+import { api } from '../services/api'
+// ════════════════════════════════════════════════════════════════
+//  CATEGORIAS DE CARRO PAGE 
+// ════════════════════════════════════════════════════════════════
 
 const CategoriaCarroPage = () => {
   const [rows, setRows] = useState([]);
@@ -11,13 +15,10 @@ const CategoriaCarroPage = () => {
   const [toast, setToast] = useState(null);
 
   useEffect(() => {
-    setTimeout(() => {
-      setRows([
-        { id: 1, nome: "Econômico", descricao: "Carros populares", valorDiaria: 120.00, ativo: true },
-        { id: 2, nome: "SUV", descricao: "Utilitários esportivos", valorDiaria: 250.00, ativo: true },
-      ]);
-      setLoading(false);
-    }, 900);
+    api.get('/CategoriaCarro')
+      .then(data => setRows(data))
+      .catch(() => setToast({ msg: "Erro ao carregar categorias", type: "error" }))
+      .finally(() => setLoading(false));
   }, []);
 
   const fields = [
@@ -45,25 +46,35 @@ const CategoriaCarroPage = () => {
     },
   ];
 
-  const handleSave = data => {
-    const newData = {
-      ...data,
-      valorDiaria: parseFloat(data.valorDiaria) || 0,
-      ativo: data.ativo !== false, // default true
-    };
-    if (data.id) {
-      setRows(r => r.map(x => x.id === data.id ? { ...x, ...newData } : x));
-      setToast({ msg: "Categoria atualizada!", type: "success" });
-    } else {
-      setRows(r => [...r, { ...newData, id: Date.now() }]);
-      setToast({ msg: "Categoria criada!", type: "success" });
+  const handleSave = async data => {
+    try {
+      const payload = {
+        ...data,
+        valorDiaria: parseFloat(data.valorDiaria) || 0,
+      };
+      if (data.id) {
+        await api.put(`/CategoriaCarro/${data.id}`, payload);
+        setToast({ msg: "Categoria atualizada!", type: "success" });
+      } else {
+        await api.post('/CategoriaCarro', payload);
+        setToast({ msg: "Categoria criada!", type: "success" });
+      }
+      const lista = await api.get('/CategoriaCarro');
+      setRows(lista);
+      setModal({ open: false, data: null });
+    } catch (e) {
+      setToast({ msg: e.message, type: "error" });
     }
-    setModal({ open: false, data: null });
   };
 
-  const handleDelete = row => {
-    setRows(r => r.filter(x => x.id !== row.id));
-    setToast({ msg: "Categoria excluída.", type: "success" });
+  const handleDelete = async row => {
+    try {
+      await api.delete(`/CategoriaCarro/${row.id}`);
+      setRows(r => r.filter(x => x.id !== row.id));
+      setToast({ msg: "Categoria excluída.", type: "success" });
+    } catch (e) {
+      setToast({ msg: e.message, type: "error" });
+    }
   };
 
   return (

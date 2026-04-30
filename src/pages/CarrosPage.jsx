@@ -3,66 +3,33 @@ import CrudTable from '../components/CrudTable'
 import FormModal from '../components/FormModal'
 import Toast from '../components/Toast'
 import Icon from '../components/Icon'
+import { api } from '../services/api'
 // ════════════════════════════════════════════════════════════════
-//  Carros PAGE
+//  CARROS PAGE
 // ════════════════════════════════════════════════════════════════
-const grupoOpts = [
-  { value: "0", label: "Econômico" },
-  { value: "1", label: "Intermediário" },
-  { value: "2", label: "Executivo" },
-  { value: "3", label: "SUV" },
-  { value: "4", label: "Premium" },
-];
- 
+
 const CarrosPage = () => {
-  const [rows, setRows]       = useState([]);
+  const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [modal, setModal]     = useState({ open: false, data: null });
-  const [toast, setToast]     = useState(null);
- 
+  const [modal, setModal] = useState({ open: false, data: null });
+  const [toast, setToast] = useState(null);
+
+  // ── Carrega carros da API ──
   useEffect(() => {
-    // simulação de dados
-    setTimeout(() => {
-      setRows([
-        {
-          id: 1,
-          modelo: "Onix",
-          marca: "Chevrolet",
-          placa: "ABC1D23",
-          ano: 2022,
-          cor: "Prata",
-          imagemUrl: "",
-          idCategoria: 1,
-          ativo: true,
-          disponivel: true,
-          dataAlteracao: "2025-04-20T10:30:00"
-        },
-        {
-          id: 2,
-          modelo: "Corolla",
-          marca: "Toyota",
-          placa: "XYZ9A87",
-          ano: 2023,
-          cor: "Preto",
-          imagemUrl: "https://exemplo.com/corolla.jpg",
-          idCategoria: 2,
-          ativo: true,
-          disponivel: false,
-          dataAlteracao: "2025-04-18T14:15:00"
-        },
-      ]);
-      setLoading(false);
-    }, 900);
+    api.get('/Carro')
+      .then(data => setRows(data))
+      .catch(() => setToast({ msg: "Erro ao carregar veículos", type: "error" }))
+      .finally(() => setLoading(false));
   }, []);
- 
+
   const fields = [
-    { key: "modelo",      label: "Modelo",        required: true, type: "text" },
-    { key: "marca",       label: "Marca",         required: true, type: "text" },
-    { key: "placa",       label: "Placa",         required: true, type: "text", placeholder: "ABC1D23" },
-    { key: "ano",         label: "Ano",           required: true, type: "number" },
-    { key: "cor",         label: "Cor",           required: true, type: "text" },
-    { key: "imagemUrl",   label: "URL da Imagem", type: "url" },
-    { key: "idCategoria", label: "ID da Categoria", required: true, type: "number" },
+    { key: "modelo",       label: "Modelo",        required: true, type: "text" },
+    { key: "marca",        label: "Marca",         required: true, type: "text" },
+    { key: "placa",        label: "Placa",         required: true, type: "text", placeholder: "ABC1D23" },
+    { key: "ano",          label: "Ano",           required: true, type: "number" },
+    { key: "cor",          label: "Cor",           required: true, type: "text" },
+    { key: "imagemUrl",    label: "URL da Imagem", type: "url" },
+    { key: "idCategoria",  label: "ID da Categoria", required: true, type: "number" },
     { 
       key: "ativo", 
       label: "Ativo", 
@@ -73,26 +40,30 @@ const CarrosPage = () => {
 
   const columns = [
     { key: "id",           label: "ID" },
-    { key: "modelo",       label: "Modelo",       primary: true },
+    { key: "modelo",       label: "Modelo",        primary: true },
     { key: "marca",        label: "Marca" },
     { key: "placa",        label: "Placa" },
     { key: "ano",          label: "Ano" },
     { key: "cor",          label: "Cor" },
-    { key: "idCategoria",  label: "Categoria" },
     { 
-  key: "ativo", 
-  label: "Ativo", 
-    render: v => v 
-      ? <span style={{ color: 'var(--accent2)' }}><Icon.Check /></span> 
-      : <span style={{ color: 'var(--muted)' }}><Icon.Close /></span>
-  },
-  { 
-    key: "disponivel", 
-    label: "Disponível",
-    render: v => v 
-      ? <span style={{ color: 'var(--accent2)' }}><Icon.Check /></span> 
-      : <span style={{ color: 'var(--muted)' }}><Icon.Close /></span>
-  },
+      key: "categoria", 
+      label: "Categoria", 
+      render: (categoria) => categoria?.nome ?? "-" 
+    },
+    { 
+      key: "ativo", 
+      label: "Ativo", 
+      render: v => v 
+        ? <span style={{ color: 'var(--accent2)' }}><Icon.Check /></span> 
+        : <span style={{ color: 'var(--muted)' }}><Icon.Close /></span>
+    },
+    { 
+      key: "disponivel", 
+      label: "Disponível",
+      render: v => v 
+        ? <span style={{ color: 'var(--accent2)' }}><Icon.Check /></span> 
+        : <span style={{ color: 'var(--muted)' }}><Icon.Close /></span>
+    },
     { 
       key: "dataAlteracao", 
       label: "Alterado em", 
@@ -100,30 +71,34 @@ const CarrosPage = () => {
     },
   ];
 
-  const handleSave = data => {
-    const newData = {
-      ...data,
-      // Garante que campos não editáveis mantenham valores padrão
-      disponivel: data.disponivel ?? false,
-      dataAlteracao: new Date().toISOString(),
-      ativo: data.ativo !== undefined ? data.ativo : true,
-    };
-
-    if (data.id) {
-      setRows(r => r.map(x => x.id === data.id ? { ...x, ...newData } : x));
-      setToast({ msg: "Carro atualizado!", type: "success" });
-    } else {
-      setRows(r => [...r, { ...newData, id: Date.now() }]);
-      setToast({ msg: "Carro criado!", type: "success" });
+  const handleSave = async data => {
+    try {
+      if (data.id) {
+        await api.put(`/Carro/${data.id}`, data);
+        setToast({ msg: "Veículo atualizado!", type: "success" });
+      } else {
+        await api.post('/Carro', data);
+        setToast({ msg: "Veículo criado!", type: "success" });
+      }
+      // recarrega a lista atualizada
+      const lista = await api.get('/Carro');
+      setRows(lista);
+      setModal({ open: false, data: null });
+    } catch (e) {
+      setToast({ msg: e.message, type: "error" });
     }
-    setModal({ open: false, data: null });
   };
- 
-  const handleDelete = row => {
-    setRows(r => r.filter(x => x.id !== row.id));
-    setToast({ msg: "Carro excluído.", type: "success" });
+
+  const handleDelete = async row => {
+    try {
+      await api.delete(`/Carro/${row.id}`);
+      setRows(r => r.filter(x => x.id !== row.id));
+      setToast({ msg: "Veículo excluído.", type: "success" });
+    } catch (e) {
+      setToast({ msg: e.message, type: "error" });
+    }
   };
- 
+
   return (
     <>
       <CrudTable
