@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import CrudTable from '../components/CrudTable'
+import CrudTable, { fmtData, fmtDateTime } from '../components/CrudTable'
 import FormModal from '../components/FormModal'
 import Toast from '../components/Toast'
 import Icon from '../components/Icon'
@@ -33,20 +33,29 @@ const ClientesPage = () => {
       const payload = {
         ...data,
         ativo: data.ativo === true || data.ativo === "true",
-        cep: data.cep || "",
+        cpf: data.cpf?.replace(/\D/g, '') || "",
+        celular: data.celular?.replace(/\D/g, '') || "",
+        cep: data.cep?.replace(/\D/g, '') || "",
         endereco: data.endereco || "",
         complementoEndereco: data.complementoEndereco || ""
       };
-      
+      console.log("Enviando payload:", payload);
       if (data.id) {
+        
         await api.put(`/Cliente/${data.id}`, payload);
+        setToast({ msg: "Cliente atualizado!", type: "success" });
       } else {
         await api.post('/Cliente', payload);
+        setToast({ msg: "Cliente criado!", type: "success" });
       }
-      // ...
+      
+      // Recarrega a lista
+      const lista = await api.get('/Cliente');
+      setRows(lista);
+      closeModal(); // fecha o modal
+      
     } catch (e) {
       if (e.erros) {
-        console.log("Erros de campo:", e.erros);
         setFieldErrors(buildFieldErrors(e.erros));
       } else {
         setToast({ msg: e.message, type: "error" });
@@ -59,20 +68,18 @@ const ClientesPage = () => {
       await api.delete(`/Cliente/${row.id}`);
       setRows(r => r.filter(x => x.id !== row.id));
       setToast({ msg: "Cliente excluído.", type: "success" });
-      console.log("Enviando payload:", payload);  // ← log
     } catch (e) {
-            console.log("Erro recebido:", e);  // ← log
       setToast({ msg: e.message, type: "error" });
     }
   };
 
   const fields = [
     { key: "nome",                label: "Nome",             required: true, type: "text", full: true },
-    { key: "cpf",                 label: "CPF",              required: true, type: "text",  placeholder: "00000000000" },
-    { key: "celular",             label: "Celular",          required: true, type: "text",  placeholder: "54999999999" },
+    { key: "cpf",                 label: "CPF",              required: true, type: "text",  placeholder: "000.000.000-00", mask: "cpf" },
+    { key: "celular",             label: "Celular",          required: true, type: "text",  placeholder: "(00) 00000-0000", mask: "celular" },
     { key: "dataNascimento",      label: "Data de Nascimento", required: true, type: "date" },
-    { key: "email",               label: "E-mail",           required: true, type: "email", full: true },
-    { key: "cep",                 label: "CEP",              type: "text",  placeholder: "00000000" },
+    { key: "email",               label: "E-mail",           required: true, type: "email", placeholder: "email@exemplo.com", full: true },
+    { key: "cep",                 label: "CEP",              type: "text",  placeholder: "00000-000", mask: "cep" },
     { key: "endereco",            label: "Endereço",         type: "text",  full: true },
     { key: "complementoEndereco", label: "Complemento",      type: "text",  full: true },
     {
@@ -85,7 +92,7 @@ const ClientesPage = () => {
     { key: "id",               label: "ID" },
     { key: "nome",             label: "Nome",        primary: true },
     { key: "cpf",              label: "CPF" },
-    { key: "dataNascimento",   label: "Nascimento",  render: v => v ? new Date(v).toLocaleDateString() : "-" },
+    { key: "dataNascimento",   label: "Nascimento", render: v => fmtData(v) },
     { key: "celular",          label: "Celular" },
     { key: "email",            label: "E-mail" },
     { key: "cep",              label: "CEP" },

@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react'
-import CrudTable from '../components/CrudTable'
+import CrudTable, { fmtData, fmtDateTime } from '../components/CrudTable'
 import FormModal from '../components/FormModal'
 import Toast from '../components/Toast'
 import Icon from '../components/Icon'
 import { api } from '../services/api'
 
-const statusColor = { 1: "#6c63ff", 2: "#00d4aa", 3: "#6b7280", 4: "#ff6b6b" };
+const statusColor = { 1: "#00d4aa", 2: "#6b7280", 3: "#ff6b6b" };
 
 const AlocacoesPage = () => {
   const [rows, setRows] = useState([]);
@@ -14,6 +14,8 @@ const AlocacoesPage = () => {
   const [toast, setToast] = useState(null);
   const [statusOpts, setStatusOpts] = useState([]);
   const [fieldErrors, setFieldErrors] = useState({});
+  const [carrosOpts, setCarrosOpts] = useState([]);
+  const [clientesOpts, setClientesOpts] = useState([]);
 
   useEffect(() => {
     api.get('/AlocacaoStatus')
@@ -28,12 +30,43 @@ const AlocacoesPage = () => {
       .finally(() => setLoading(false));
   }, []);
 
+  // buscar carros e clientes
+  useEffect(() => {
+    api.get('/Carro')
+      .then(data => setCarrosOpts(data.map(c => ({ value: c.id, label: `${c.modelo} - ${c.placa}` }))))
+      .catch(() => {});
+    api.get('/Cliente')
+      .then(data => setClientesOpts(data.map(c => ({ value: c.id, label: c.nome }))))
+      .catch(() => {});
+  }, []);
   const buildFieldErrors = (erros) =>
     erros.reduce((acc, { campo, mensagem }) => ({ ...acc, [campo.toLowerCase()]: mensagem }), {});
 
   const closeModal = () => {
     setModal({ open: false, data: null });
     setFieldErrors({});
+  };
+
+  const handleBaixa = async row => {
+    try {
+      await api.put(`/Alocacao/${row.id}/baixa`);
+      setToast({ msg: "Devolução registrada!", type: "success" });
+      const lista = await api.get('/Alocacao');
+      setRows(lista);
+    } catch (e) {
+      setToast({ msg: e.message, type: "error" });
+    }
+  };
+
+  const handleCancelar = async row => {
+    try {
+      await api.put(`/Alocacao/${row.id}/cancelar`);
+      setToast({ msg: "Alocação cancelada!", type: "success" });
+      const lista = await api.get('/Alocacao');
+      setRows(lista);
+    } catch (e) {
+      setToast({ msg: e.message, type: "error" });
+    }
   };
 
   const handleSave = async data => {
@@ -44,6 +77,7 @@ const AlocacoesPage = () => {
         status: Number(data.status),
         dataDevolucao: data.dataDevolucao || null,
       };
+      console.log("Payload enviado:", JSON.stringify(payload));
       if (data.id) {
         await api.put(`/Alocacao/${data.id}`, payload);
         setToast({ msg: "Alocação atualizada!", type: "success" });
@@ -74,12 +108,12 @@ const AlocacoesPage = () => {
   };
 
   const fields = [
-    { key: "idCarro", label: "ID do Carro", required: true, type: "number" },
-    { key: "idCliente", label: "ID do Cliente", required: true, type: "number" },
+    { key: "idCarro", label: "Carro", required: true, type: "select", options: carrosOpts },
+    { key: "idCliente", label: "Cliente", required: true, type: "select", options: clientesOpts },
     { key: "dataRetirada", label: "Data de Retirada", required: true, type: "date" },
     { key: "dataPrevistaDevolucao", label: "Previsão Devolução", required: true, type: "date" },
     { key: "dataDevolucao", label: "Data de Devolução", type: "date" },
-    { key: "status", label: "Status", type: "select", options: statusOpts },
+    { key: "status", label: "Status", type: "select", options: statusOpts, required: true },
   ];
 
   const columns = [
@@ -88,9 +122,9 @@ const AlocacoesPage = () => {
     { key: "cliente", label: "Cliente", primary: true, render: c => c?.nome ?? "-" },
     { key: "idCarro", label: "ID Carro" },
     { key: "carro", label: "Carro", render: c => c?.modelo ?? "-" },
-    { key: "dataRetirada", label: "Retirada" },
-    { key: "dataPrevistaDevolucao", label: "Prev. Devolução" },
-    { key: "dataDevolucao", label: "Devolução Real", render: v => v ? new Date(v).toLocaleDateString() : "-" },
+    { key: "dataRetirada", label: "Retirada", render: v => fmtData(v)  },
+    { key: "dataPrevistaDevolucao", label: "Prev. Devolução", render: v => fmtData(v)  },
+    { key: "dataDevolucao", label: "Devolução", render: v => fmtData(v) },
     { key: "valorTotal", label: "Valor Total", render: v => v != null ? `R$ ${Number(v).toFixed(2)}` : "-" },
     { key: "status", label: "Status", render: v => (
       <span style={{ color: statusColor[v] ?? "var(--muted)", fontSize: 12, fontWeight: 600 }}>
@@ -106,7 +140,11 @@ const AlocacoesPage = () => {
       <CrudTable
         title="Alocações" icon={<Icon.Rental />} accent="var(--accent3)"
         columns={columns} rows={rows} loading={loading}
-        onAdd={() => setModal({ open: true, data: null })}
+        extraActions={[
+        { label: "Baixa", icon: <Icon.Check />, variant: "success", onClick: handleBaixa },
+        { label: "Cancelar", icon: <Icon.Close />, variant: "danger", onClick: handleCancelar },
+        ]}
+        onAdd={() => setModal({ open: true, data: {status: 1} })}
         onEdit={row => setModal({ open: true, data: row })}
         onDelete={handleDelete}
       />

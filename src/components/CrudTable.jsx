@@ -2,12 +2,17 @@ import { useState } from 'react'
 import Btn from './Btn'
 import Icon from './Icon'
 import DeleteModal from './DeleteModal'
+
+// ── Helper de data exportado — use nas pages nos renders de data ──
+export const fmtData     = v => v ? new Date(v).toLocaleDateString('pt-BR')  : "—";
+export const fmtDateTime = v => v ? new Date(v).toLocaleString('pt-BR')      : "—";
+
 // ════════════════════════════════════════════════════════════════
-//  CRUD TABLE — componente genérico reutilizável pelas 3 entidades
+//  CRUD TABLE
 // ════════════════════════════════════════════════════════════════
-const CrudTable = ({ title, icon, accent, columns, rows, loading, onAdd, onEdit, onDelete }) => {
+const CrudTable = ({ title, icon, accent, columns, rows, loading, onAdd, onEdit, onDelete, extraActions }) => {
   const [deleteTarget, setDeleteTarget] = useState(null);
- 
+
   return (
     <div style={{ animation: "fadeUp .4s both" }}>
       {/* Header */}
@@ -18,10 +23,10 @@ const CrudTable = ({ title, icon, accent, columns, rows, loading, onAdd, onEdit,
         </div>
         <Btn onClick={onAdd}><Icon.Plus /> Novo registro</Btn>
       </div>
- 
+
       {/* Table */}
       <div style={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 16, overflowX: "auto" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14, tableLayout: "auto" }}>
           <thead>
             <tr style={{ background: "rgba(255,255,255,.03)", borderBottom: "1px solid var(--border)" }}>
               {columns.map(c => (
@@ -29,9 +34,10 @@ const CrudTable = ({ title, icon, accent, columns, rows, loading, onAdd, onEdit,
                   padding: "14px 20px", textAlign: "left",
                   fontFamily: "var(--heading)", fontWeight: 600, fontSize: 12,
                   color: "var(--muted)", letterSpacing: 1, textTransform: "uppercase",
+                  whiteSpace: "nowrap",   // ← cabeçalho nunca quebra
                 }}>{c.label}</th>
               ))}
-              <th style={{ padding: "14px 20px", width: 100 }} />
+              <th style={{ padding: "14px 20px", whiteSpace: "nowrap" }} />
             </tr>
           </thead>
           <tbody>
@@ -58,12 +64,21 @@ const CrudTable = ({ title, icon, accent, columns, rows, loading, onAdd, onEdit,
                 onMouseLeave={e => e.currentTarget.style.background = ""}
               >
                 {columns.map(c => (
-                  <td key={c.key} style={{ padding: "15px 20px", color: c.primary ? "var(--text)" : "var(--muted)" }}>
+                  <td key={c.key} style={{
+                    padding: "15px 20px",
+                    color: c.primary ? "var(--text)" : "var(--muted)",
+                    whiteSpace: "nowrap",   // ← células nunca quebram linha
+                  }}>
                     {c.render ? c.render(row[c.key], row) : row[c.key] ?? "—"}
                   </td>
                 ))}
-                <td style={{ padding: "15px 20px" }}>
+                <td style={{ padding: "15px 20px", whiteSpace: "nowrap" }}>
                   <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
+                    {extraActions?.map((action, idx) => (
+                      <Btn key={idx} small variant={action.variant} onClick={() => action.onClick(row)}>
+                        {action.icon} {action.label}
+                      </Btn>
+                    ))}
                     <Btn small variant="ghost" onClick={() => onEdit(row)}><Icon.Edit /></Btn>
                     <Btn small variant="danger" onClick={() => setDeleteTarget(row)}><Icon.Trash /></Btn>
                   </div>
@@ -73,7 +88,7 @@ const CrudTable = ({ title, icon, accent, columns, rows, loading, onAdd, onEdit,
           </tbody>
         </table>
       </div>
- 
+
       <DeleteModal
         open={!!deleteTarget}
         name={deleteTarget?.nome || deleteTarget?.modelo || deleteTarget?.id || "este registro"}

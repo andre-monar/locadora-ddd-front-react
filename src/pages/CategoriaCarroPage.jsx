@@ -35,6 +35,7 @@ const CategoriaCarroPage = () => {
         valorDiaria: parseFloat(data.valorDiaria) || 0,
         ativo: data.ativo === true || data.ativo === "true"
       };
+      console.log("Payload enviado:", JSON.stringify(payload));
       if (data.id) {
         await api.put(`/CategoriaCarro/${data.id}`, payload);
         setToast({ msg: "Categoria atualizada!", type: "success" });
@@ -67,7 +68,7 @@ const CategoriaCarroPage = () => {
   const fields = [
     { key: "nome", label: "Nome", required: true },
     { key: "descricao", label: "Descrição", type: "textarea" },
-    { key: "valorDiaria", label: "Valor da Diária", required: true, type: "number", step: "0.01" },
+    { key: "valorDiaria", label: "Valor da Diária", required: true, type: "number", placeholder: "50,00", step: "0.01", min: "0.01", prefix: "R$" },
     {
       key: "ativo", label: "Ativo", type: "select", boolean: true,
       options: [{ value: true, label: "Sim" }, { value: false, label: "Não" }]
@@ -92,7 +93,7 @@ const CategoriaCarroPage = () => {
       <CrudTable
         title="Categorias de Carro" icon={<Icon.Category />} accent="var(--accent4)"
         columns={columns} rows={rows} loading={loading}
-        onAdd={() => setModal({ open: true, data: { ativo: true } })}   // abre com ativo true
+        onAdd={() => setModal({ open: true, data: { ativo: true, valorDiaria: "0.00" } })}   // abre com ativo true, valor em decimal
         onEdit={row => setModal({ open: true, data: row })}
         onDelete={handleDelete}
       />

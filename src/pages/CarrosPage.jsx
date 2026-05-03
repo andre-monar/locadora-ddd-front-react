@@ -11,12 +11,20 @@ const CarrosPage = () => {
   const [modal, setModal] = useState({ open: false, data: null });
   const [toast, setToast] = useState(null);
   const [fieldErrors, setFieldErrors] = useState({});
+  const [categorias, setCategorias] = useState([]);
 
   useEffect(() => {
     api.get('/Carro')
       .then(data => setRows(data))
       .catch(() => setToast({ msg: "Erro ao carregar carros", type: "error" }))
       .finally(() => setLoading(false));
+  }, []);
+
+  // buscar categorias de carro tb
+  useEffect(() => {
+    api.get('/CategoriaCarro')
+      .then(data => setCategorias(data.map(c => ({ value: c.id, label: c.nome }))))
+      .catch(() => {});
   }, []);
 
   const buildFieldErrors = (erros) =>
@@ -28,10 +36,18 @@ const CarrosPage = () => {
   };
 
   const handleSave = async data => {
-    setFieldErrors({});
-    try {
-      // Garante que ativo seja boolean
-      const payload = { ...data, ativo: data.ativo === true || data.ativo === "true" };
+  setFieldErrors({});
+  
+  // Validação do select de categoria
+  if (!data.idCategoria || Number(data.idCategoria) <= 0) {
+    setFieldErrors({ idcategoria: "Selecione uma categoria" });
+    return; // não fecha o modal
+  }
+  
+  try {
+    const payload = { ...data, ativo: data.ativo === true || data.ativo === "true", idCategoria: Number(data.idCategoria) };
+    // ... resto igual
+      console.log("Payload enviado:", JSON.stringify(payload));
       if (data.id) {
         await api.put(`/Carro/${data.id}`, payload);
         setToast({ msg: "Veículo atualizado!", type: "success" });
@@ -62,13 +78,13 @@ const CarrosPage = () => {
   };
 
   const fields = [
-    { key: "modelo", label: "Modelo", required: true, type: "text" },
     { key: "marca", label: "Marca", required: true, type: "text" },
-    { key: "placa", label: "Placa", required: true, type: "text", placeholder: "ABC1D23" },
+    { key: "modelo", label: "Modelo", required: true, type: "text" },
+    { key: "placa", label: "Placa", required: true, type: "text", placeholder: "ABC1D23", uppercase: true},
     { key: "ano", label: "Ano", required: true, type: "number" },
     { key: "cor", label: "Cor", required: true, type: "text" },
     { key: "imagemUrl", label: "URL da Imagem", type: "url" },
-    { key: "idCategoria", label: "ID da Categoria", required: true, type: "number" },
+    { key: "idCategoria", label: "Categoria", required: true, type: "select", options: categorias },
     {
       key: "ativo",
       label: "Ativo",
@@ -80,8 +96,8 @@ const CarrosPage = () => {
 
   const columns = [
     { key: "id", label: "ID" },
-    { key: "modelo", label: "Modelo", primary: true },
     { key: "marca", label: "Marca" },
+    { key: "modelo", label: "Modelo", primary: true },
     { key: "placa", label: "Placa" },
     { key: "ano", label: "Ano" },
     { key: "cor", label: "Cor" },
@@ -107,7 +123,7 @@ const CarrosPage = () => {
         title="Carros" icon={<Icon.Car />} accent="var(--accent2)"
         columns={columns} rows={rows} loading={loading}
         onAdd={() => setModal({ open: true, data: { ativo: true } })}    // abre com ativo true
-        onEdit={row => setModal({ open: true, data: row })}
+        onEdit={row => setModal({ open: true, data: { ...row, idCategoria: row.categoria?.id ?? row.idCategoria } })}
         onDelete={handleDelete}
       />
       <FormModal

@@ -20,9 +20,10 @@ async function request(path, options = {}) {
     const err = new Error(body?.mensagem || body?.title || "Erro na requisição");
     // Se vier array de erros, anexa para o FormModal
     if (Array.isArray(body?.erros)) {
-      err.erros = body.erros;
-      // Pega a primeira mensagem para o toast
-      err.message = body.erros.map(e => `${e.campo}: ${e.mensagem}`).join('; ');
+      const msg = body.erros.map(e => `${e.campo}: ${e.mensagem}`).join('; ');
+      console.log("Erros do backend:", body.erros);
+  console.log("Mensagem montada:", msg);
+      throw { message: msg, erros: body.erros };
     }
     throw err;
   }

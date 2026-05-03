@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import Btn from './Btn'
 import Icon from './Icon'
+import { formatCPF, formatCelular, formatCep } from '../utils/masks'
 
 const inputBase = {
   width: "100%", background: "rgba(255,255,255,.05)",
@@ -20,10 +21,27 @@ const FormModal = ({ open, title, fields, initialData, onSave, onClose, fieldErr
   const [form, setForm] = useState({});
 
   useEffect(() => {
-    setForm(initialData ?? {});
+    if (initialData) {
+    const formatted = { ...initialData };
+    // Se tiver valorDiaria, formata com 2 decimais
+    if (formatted.valorDiaria !== undefined && formatted.valorDiaria !== null) {
+      formatted.valorDiaria = Number(formatted.valorDiaria).toFixed(2);
+    }
+    setForm(formatted);
+  } else {
+    setForm({});
+  }
   }, [initialData, open]);
 
   if (!open) return null;
+
+  // aplica masks (colocar pontos automaticamente no cpf por ex)
+  const applyMask = (value, maskType) => {
+    if (maskType === 'cpf') return formatCPF(value);
+    if (maskType === 'celular') return formatCelular(value);
+    if (maskType === 'cep') return formatCep(value);
+    return value;
+  };
 
   // Converte o valor do campo respeitando o tipo
   const handleChange = (f, rawValue) => {
@@ -31,9 +49,13 @@ const FormModal = ({ open, title, fields, initialData, onSave, onClose, fieldErr
 
     if (f.boolean) {
       // select booleano: "true" / "false" → boolean real
-      value = rawValue === "true" || rawValue === true;
     } else if (f.type === "number") {
       value = rawValue === "" ? "" : Number(rawValue);
+    } else if (f.mask) {
+      // Aplica máscara e mantém o valor formatado
+      value = applyMask(rawValue, f.mask);
+    } else if (f.uppercase) {
+      value = rawValue.toUpperCase();
     }
 
     setForm(p => ({ ...p, [f.key]: value }));
@@ -63,7 +85,7 @@ const FormModal = ({ open, title, fields, initialData, onSave, onClose, fieldErr
           <button onClick={onClose} style={{ background: "none", border: "none", color: "var(--muted)", cursor: "pointer", fontSize: 22, lineHeight: 1 }}>×</button>
         </div>
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} noValidate>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "18px 16px" }}>
             {fields.map(f => {
               const errMsg = getError(f.key);
@@ -93,7 +115,21 @@ const FormModal = ({ open, title, fields, initialData, onSave, onClose, fieldErr
                       rows={3}
                       style={{ ...inputStyle(!!errMsg), resize: "vertical" }}
                     />
-                  ) : (
+                  ) : f.prefix === "R$" ? (
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ color: "var(--muted)", fontSize: 14, fontWeight: 600 }}>R$</span>
+                      <input
+                        type="number"
+                        placeholder={f.placeholder}
+                        value={form[f.key] ?? ""}
+                        onChange={e => handleChange(f, e.target.value)}
+                        required={f.required}
+                        step={f.step}
+                        min={f.min ?? 0}
+                        style={{ ...inputStyle(!!errMsg), flex: 1 }}
+                      />
+                    </div>
+                    ) : (
                     <input
                       type={f.type || "text"}
                       placeholder={f.placeholder}
