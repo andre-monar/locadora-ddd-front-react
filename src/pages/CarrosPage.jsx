@@ -114,6 +114,7 @@ const CarrosPage = () => {
         ? <span style={{ color: 'var(--accent2)' }}><Icon.Check /></span>
         : <span style={{ color: 'var(--muted)' }}><Icon.Close /></span>
     },
+    { key: "dataCriacao", label: "Criado em", render: v => v ? new Date(v).toLocaleString() : "-" },
     { key: "dataAlteracao", label: "Alterado em", render: v => v ? new Date(v).toLocaleString() : "-" },
   ];
 
@@ -123,7 +124,7 @@ const CarrosPage = () => {
         title="Carros" icon={<Icon.Car />} accent="var(--accent2)"
         columns={columns} rows={rows} loading={loading}
         onAdd={() => setModal({ open: true, data: { ativo: true } })}    // abre com ativo true
-        onEdit={row => setModal({ open: true, data: { ...row, idCategoria: row.categoria?.id ?? row.idCategoria } })}
+        onEdit={row => setModal({ open: true, data: { ...row, idCategoria: row.categoria?.id ?? row.idCategoria } })} // insere categoria atual pra iniciar o modal
         onDelete={handleDelete}
       />
       <FormModal

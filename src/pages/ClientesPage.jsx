@@ -4,6 +4,7 @@ import FormModal from '../components/FormModal'
 import Toast from '../components/Toast'
 import Icon from '../components/Icon'
 import { api } from '../services/api'
+import { formatCPF, formatCelular, formatCep } from '../utils/masks';
 
 const ClientesPage = () => {
   const [rows, setRows]             = useState([]);
@@ -108,7 +109,15 @@ const ClientesPage = () => {
         title="Clientes" icon={<Icon.User />} accent="var(--accent1)"
         columns={columns} rows={rows} loading={loading}
         onAdd={() => setModal({ open: true, data: { ativo: true } })}   // inicia com ativo true
-        onEdit={row => setModal({ open: true, data: row })}
+        onEdit={row => {
+          const formatted = {
+            ...row,
+            cpf: formatCPF(row.cpf || ''),
+            celular: formatCelular(row.celular || ''),
+            cep: formatCep(row.cep || ''),
+          };
+          setModal({ open: true, data: formatted });
+        }}
         onDelete={handleDelete}
       />
       <FormModal
