@@ -99,10 +99,12 @@ const FormModal = ({ open, title, fields, initialData, onSave, onClose, fieldErr
                     <select
                       value={form[f.key] ?? ""}
                       onChange={e => handleChange(f, e.target.value)}
-                      style={{inputStyle(!!errMsg), 
-                      color: "var(--text)",
-                      background: "rgba(255,255,255,.05)",
-                      colorScheme: "dark"}}
+                      style={{
+                        ...inputStyle(!!errMsg),
+                        color: "var(--text)",
+                        background: "rgba(255,255,255,.05)",
+                        colorScheme: "dark"
+                      }}
                     >
                       <option value="">Selecione...</option>
                       {f.options?.map(o => (
